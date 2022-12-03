@@ -1,0 +1,86 @@
+
+\documentclass[10pt]{article}
+
+\usepackage{listings}
+\usepackage{geometry}
+\usepackage{parskip}
+\usepackage{xcolor}
+
+\geometry{a4paper, left=1.5cm, right=1.5cm}
+
+\author{David Burian}
+\date{\today}
+\title{Vector Space Model}
+
+\definecolor{lightlightgray}{HTML}{efefef}
+\lstset{backgroundcolor=\color{lightlightgray},framerule=0pt}
+
+\begin{document}
+\maketitle
+
+
+\section{Instalace}
+
+Moje řešení je implementováno v pythnu s verzí \verb|3.10.2|. Všechny potřebné
+balíčky jsou k nahlédnutí v \verb|requirements.txt| souboru.
+
+Hlavní program je \verb|main.py| a pouští se dle zadání:
+\begin{lstlisting}[language=bash]
+python main.py -q <topics> -d <docs> -r <run> -o <out-file>
+\end{lstlisting}
+
+Pro mé vlastní pohodlí jsem si ještě napsal Makefile. Ta předpokládá, že:
+
+\begin{itemize}
+    \item Celá složka se zadáním a daty je v \verb|DATA_DIR|
+    \item Program \verb|trec_eval| je k nalezení na cestě \verb|TREC_EVAL_BIN|
+\end{itemize}
+
+Obě proměnné jsou nastavitelné v prvních řádcích Makefile. Shrnutí co Makefile
+umí:
+
+\begin{lstlisting}[language=bash,texcl=true]
+# Vygeneruje .res soubory pro defaultní run (run-0), oba jazyky a oba datové sety
+make res
+
+# Vygeneruje .res soubory pro run-1, oba jazyky a oba datové sety
+make res run=run-1
+
+# Vygeneruje .res soubory pro run-1, oba jazyky a train data
+make res run=run-1 mode=train
+
+# Vygeneruje .res soubor pro run-1, cs a train data
+make res run=run-1 mode=train lan=cs
+
+# Vygeneruje patřičné .res soubory (pokud je potřeba) a evaluuje je pomocí trec\_eval
+make {eval} run=run-1 lan=en
+\end{lstlisting}
+
+\section{Experimenty}
+
+\subsection{run-0}
+
+Základní řešení se chová dle zadání:
+
+\begin{enumerate}
+    \item Z dokumentů vytáhne všechen text
+    \item Rozdělí text všemi následujícími znaky: \verb|\t \n[](),.?!;:|
+    \item Uloží do inverted indexu počet výskytů
+    \item Z každé query si načte \verb|<title>| a stejně ho rozdělí na slova
+    \item Vypočítá podobnost pomocí cosínu
+\end{enumerate}
+
+Zde jsou výsledky:
+
+%TODO: gen tables script
+%TODO: gen graphs script
+\begin{center}
+\begin{tabular}{c c c c c c} 
+    run id & MAP & P@5 & P@30 & P@100 & P@500 \\ [0.5ex]
+ \hline
+    run-0\_cs & 0.1158 & 0.1920 & 0.0773 & 0.0324 & 0.0107\\
+ \hline
+\end{tabular}
+\end{center}
+
+\end{document}

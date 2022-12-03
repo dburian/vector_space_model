@@ -4,7 +4,7 @@ from multiprocessing.pool import Pool
 from typing import Iterator
 
 from src import terms, utils
-from src.document import DocumentCS
+from src.document import Document
 from src.index import InvertedIndex
 from src.query import Query
 
@@ -13,7 +13,7 @@ SEPS = r' \t\n\.,\?!":;\[\]\(\)/'
 
 def per_document(path: str) -> InvertedIndex:
     index = InvertedIndex({}, {})
-    for doc in utils.get_document_iter(path, DocumentCS):
+    for doc in utils.get_document_iter(path, Document):
         doc_terms = terms.extract(doc.str_all, SEPS)
         for term_str, count in doc_terms.items():
             index.add_posting(term_str, str(doc.id), count)
@@ -35,13 +35,6 @@ def experiment(
         ):
             print(f"\rRecieved index {i + 1}", end="")
             index.update_with(docs_index)
-
-    # for i, path in enumerate(docs_paths_iter):
-    #     print(f"\rRecieved index {i}", end="")
-    #     for doc in utils.get_document_iter(path, DocumentCS):
-    #         doc_terms = terms.extract(doc.str_all, r' \t\n\.,\?!":;\[\]\(\)/')
-    #         for term in doc_terms:
-    #             index.add_posting(term.str, str(doc.id), term.count)
 
     print()
 

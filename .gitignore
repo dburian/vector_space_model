@@ -1,3 +1,10 @@
 
 data
 __pycache__
+
+# Ignoring .res files
+*.res
+
+# Latex
+*.aux
+*.log

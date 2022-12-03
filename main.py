@@ -1,10 +1,8 @@
 import argparse
-import os
 import sys
 from typing import Callable, Iterator
 
-from src import alpha, utils
-from src.document import Document
+from src import baseline, utils
 
 parser = argparse.ArgumentParser()
 
@@ -28,8 +26,11 @@ parser.add_argument(
     "-o", "--output", type=str, help="Name of the output file.", required=True
 )
 
-Experiment = Callable[[Iterator[str], str], None]
-AVAILABLE_RUNS: dict[str, Experiment] = {"alpha": alpha.experiment}
+Experiment = Callable[[Iterator[str], str, str, str], None]
+AVAILABLE_RUNS: dict[str, Experiment] = {
+    "run-0_cs": baseline.experiment,
+    "run-0_en": baseline.experiment,
+}
 
 
 def main(args: argparse.Namespace) -> None:
