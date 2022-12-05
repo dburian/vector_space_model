@@ -1,8 +1,12 @@
 import io
 import os
-from typing import Callable, Iterator
+from itertools import zip_longest
+from math import log
+from multiprocessing.pool import Pool
+from typing import Any, Callable, Iterator
 
 import bs4
+from src import log, terms
 from src.document import Document
 from src.query import Query
 
@@ -42,3 +46,62 @@ def write_qrels(
 ) -> None:
     for rank, (sim, doc_id) in enumerate(similar_docs):
         print("\t".join([query_id, "0", doc_id, str(rank), str(sim), run_id]), file=out)
+
+
+def batch(iterable: Iterator[Any], batch_size: int) -> Iterator[list[Any]]:
+    batch = []
+    for element in iterable:
+        batch.append(element)
+        if len(batch) == batch_size:
+            yield batch
+            batch = []
+
+    if len(batch) > 0:
+        yield batch
+
+
+def load_stopwords(path: str) -> set[str]:
+    with open(path, mode="r", encoding="utf-8") as file:
+        return set(file.read().splitlines())
+
+
+def gen_stopwords_per_document(args: tuple[str, str]) -> dict[str, int]:
+    doc_path, separators = args
+    term_counts = {}
+    for doc in get_document_iter(doc_path, Document):
+        doc_terms = terms.extract(doc.str_all, separators)
+        for term_str, count in doc_terms.items():
+            term_counts[term_str] = term_counts.get(term_str, 0) + count
+
+    return term_counts
+
+
+def generate_stopwords(
+    docs_paths_iter: Iterator[str],
+    separators: str,
+    threshold_freq: float,
+    output_file: str,
+) -> None:
+    log.timed("Parsing documents...")
+
+    term_counts = {}
+    doc_count = 0
+    with Pool() as pool:
+        for docs_term_counts in pool.imap(
+            gen_stopwords_per_document,
+            zip_longest(docs_paths_iter, [], fillvalue=separators),
+            chunksize=20,
+        ):
+            doc_count += 1
+            print(f"\rParsed doc {doc_count}", end="")
+            for term, count in docs_term_counts.items():
+                term_counts[term] = term_counts.get(term, 0) + count
+
+    print()
+
+    log.timed("Parsing complete")
+
+    with open(output_file, mode="w", encoding="utf-8") as stopword_file:
+        for term, count in term_counts.items():
+            if count / doc_count > threshold_freq:
+                print(term, file=stopword_file)

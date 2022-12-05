@@ -1,3 +1,4 @@
+import math
 import re
 from collections import namedtuple
 from typing import Callable, Optional
@@ -32,5 +33,21 @@ def extract(
     return counts
 
 
-def compute_natural_weight(count: int) -> float:
+def natural_weight(count: int, _) -> float:
     return count
+
+
+def tf_idf_weight(
+    document_count: int, term_frequency: int, document_frequency: int
+) -> float:
+    log_tf = 1 + math.log10(term_frequency)
+    idf = (document_count / document_frequency) if document_frequency > 0 else 1
+    log_idf = 1 + math.log10(idf)
+    return log_tf * log_idf
+
+
+WHSP_SEPS = r" \n\t"
+PUNCT_SEPS = r",.:;?!"
+PUNCT_EXT_SEPS = r'-_"\'/'
+PAR_SEP = r"\[\]\(\)"
+QUOT = r"\"'"

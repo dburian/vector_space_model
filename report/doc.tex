@@ -1,12 +1,15 @@
 
 \documentclass[10pt]{article}
 
+\usepackage{graphicx}
+\usepackage[utf8]{inputenc}
 \usepackage{listings}
 \usepackage{geometry}
 \usepackage{parskip}
 \usepackage{xcolor}
+\usepackage{url}
 
-\geometry{a4paper, left=1.5cm, right=1.5cm}
+\geometry{a4paper, left=1.5cm, right=1.5cm, top=1.5cm, bottom=1.5cm}
 
 \author{David Burian}
 \date{\today}
@@ -15,72 +18,270 @@
 \definecolor{lightlightgray}{HTML}{efefef}
 \lstset{backgroundcolor=\color{lightlightgray},framerule=0pt}
 
+\newcommand{\Run}[1]{\textbf{#1}}
+
 \begin{document}
 \maketitle
 
 
-\section{Instalace}
+\section{Installation}
 
-Moje řešení je implementováno v pythnu s verzí \verb|3.10.2|. Všechny potřebné
-balíčky jsou k nahlédnutí v \verb|requirements.txt| souboru.
+My solution is implemented in python \verb|3.10.2|. All necessary packages are
+listed in \verb|requirements.txt|.
 
-Hlavní program je \verb|main.py| a pouští se dle zadání:
+The main program is in \verb|main.py| and is run according to the assignment's
+instructions:
 \begin{lstlisting}[language=bash]
 python main.py -q <topics> -d <docs> -r <run> -o <out-file>
 \end{lstlisting}
 
-Pro mé vlastní pohodlí jsem si ještě napsal Makefile. Ta předpokládá, že:
+For my own convenience I wrote a Makefile, which assumes:
 
 \begin{itemize}
-    \item Celá složka se zadáním a daty je v \verb|DATA_DIR|
-    \item Program \verb|trec_eval| je k nalezení na cestě \verb|TREC_EVAL_BIN|
+
+    \item The whole assignment folder is placed under \verb|DATA_DIR|
+    \item Evaluation program \verb|trec_eval| can be found under \verb|TREC_EVAL_BIN|
 \end{itemize}
 
-Obě proměnné jsou nastavitelné v prvních řádcích Makefile. Shrnutí co Makefile
-umí:
+Both constants can be set in the first few lines. Here is a summary of what the
+Makefile can do:
 
 \begin{lstlisting}[language=bash,texcl=true]
-# Vygeneruje .res soubory pro defaultní run (run-0), oba jazyky a oba datové sety
+# Generates .res files for default run (run-0), both languages and both data splits
 make res
 
-# Vygeneruje .res soubory pro run-1, oba jazyky a oba datové sety
+# Generates .res files for run-1, both languages and both data splits
 make res run=run-1
 
-# Vygeneruje .res soubory pro run-1, oba jazyky a train data
+# Generates .res files for run-1, both languages and train data split
 make res run=run-1 mode=train
 
-# Vygeneruje .res soubor pro run-1, cs a train data
+# Generates .res file for run-1, cs language and train data split
 make res run=run-1 mode=train lan=cs
 
-# Vygeneruje patřičné .res soubory (pokud je potřeba) a evaluuje je pomocí trec\_eval
-make {eval} run=run-1 lan=en
+# Generates corresponding .res file (if they are needed) and evaluates them using trec\_eval
+make eval run=run-1 lan=en
 \end{lstlisting}
 
-\section{Experimenty}
+\section{Experiments}
 
 \subsection{run-0}
 
-Základní řešení se chová dle zadání:
+
+The basic solution behaves according to the instructions and equally for both
+languages:
 
 \begin{enumerate}
-    \item Z dokumentů vytáhne všechen text
-    \item Rozdělí text všemi následujícími znaky: \verb|\t \n[](),.?!;:|
-    \item Uloží do inverted indexu počet výskytů
-    \item Z každé query si načte \verb|<title>| a stejně ho rozdělí na slova
-    \item Vypočítá podobnost pomocí cosínu
+    \item Parses all text found in a document (between tags, of course)
+    \item Splits the text using any of the following characters
+        \textvisiblespace\verb|\t\n,.?!;:|
+    \item Uses inverted index to store term-document counts
+    \item From every query parses \verb|<title>| and splits it to words
+        identically
+    \item Computes similarity between query and document using term-at-a-time
+        processing and min-heap
+    \item Uses cosine similarity as similarity measure
 \end{enumerate}
 
-Zde jsou výsledky:
+Results are depicted in Figure~\ref{fig:run-0} and Table~\ref{tbl:run-0}
 
-%TODO: gen tables script
-%TODO: gen graphs script
-\begin{center}
-\begin{tabular}{c c c c c c} 
-    run id & MAP & P@5 & P@30 & P@100 & P@500 \\ [0.5ex]
- \hline
-    run-0\_cs & 0.1158 & 0.1920 & 0.0773 & 0.0324 & 0.0107\\
- \hline
-\end{tabular}
-\end{center}
+\begin{table}[h]
+\centering
+\input{../supplementary/table_run-0.tex}
+    \caption{Results of \Run{run-0}.\label{tbl:run-0}}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{../supplementary/graph_run-0.png}
+    \caption{Precision and 11-point interpolated precision-recall curves for
+    \Run{run-0}.\label{fig:run-0}}
+\end{figure}
+
+As can be seen in Figure~\ref{fig:run-0} \Run{run-0} is for the Czech dataset
+initially much more precise, but its precision falls down more quickly than for
+the English one. For the English dataset the system is more forgiving, meaning
+there are more relevant documents for given queries. I believe this is the
+reason why for English \Run{run-0} achieves higher MAP and has higher tail in
+the int. precision-recall curve.
+
+\subsection{run-1}
+
+After the basic solution I decided to find the best settings by iterative
+improvements. These will be described in the following paragraphs. Please note
+that not all of these experiments can be replicated with just specifying the run
+ID and running \texttt{make}. For some of these experiments it is necessary to
+change the source code or other files.
+
+\paragraph{run-0-tfidf} Instead of the default natural weighting I decided to use
+tf-idf. My reasons were that tf-idf weights terms according to their frequency
+of use and therefore is not as sensitive to everyday words such as \emph{every},
+\emph{day} or \emph{word}.
+
+\begin{table}[h]
+\centering
+\input{../supplementary/table_run-0-tfidf.tex}
+    \caption{Results of \Run{run-0-tfidf} and \Run{run-0}.\label{tbl:run-0-tfidf}}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{../supplementary/graph_run-0-tfidf.png}
+    \caption{Precision and 11-point interpolated precision-recall curves for
+    \Run{run-0-tfidf} and \Run{run-0}.\label{fig:run-0-tfidf}}
+\end{figure}
+
+As can be seen from Figure~\ref{fig:run-0-tfidf} and from
+Table~\ref{tbl:run-0-tfidf} tf-idf did not help much, but the system was able to return
+a little bit more relevant documents, than with natural weighting.
+
+\paragraph{run-0-seps} The default set of separators is rather small and I
+wanted to try to extend it before I started experimenting with stop words. I
+tried four extensions:
+\begin{enumerate}
+    \item \Run{run-0-seps-quot} -- quotation marks: \verb|"'|,
+    \item \Run{run-0-seps-punc} -- more punctuation characters: \verb|-_|,
+    \item \Run{run-0-seps-par} -- parentheses: \verb|[]()|,
+    \item \Run{run-0-seps-quot-par} -- quotation and parentheses sets combined.
+\end{enumerate}
+
+To generate these results \Run{run-0-tfidf} was used with different separators
+set.
+
+\begin{table}[h]
+\centering
+\input{../supplementary/table_run-0-sep.tex}
+    \caption{Results of
+    \Run{run-0-sep-punc}, \Run{run-0-sep-quot}, \Run{run-0-seps-par},
+    \Run{run-0-seps-quot-par} and \Run{run-0-tfidf}.\label{tbl:run-0-sep}}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{../supplementary/graph_run-0-sep.png}
+    \caption{Precision and 11-point interpolated precision-recall curves for
+    \Run{run-0-sep-punc}, \Run{run-0-sep-quot}, \Run{run-0-seps-par},
+    \Run{run-0-seps-quot-par} and \Run{run-0-tfidf}.\label{fig:run-0-sep}}
+\end{figure}
+
+As can be seen from Table~\ref{tbl:run-0-sep} and Figure~\ref{fig:run-0-sep}
+the best set of separators for both languages is default set plus both the
+quotation marks and parentheses extensions. I'll use these sets going forward.
+
+
+\paragraph{run-0-stopwords} To speed up the system and to make it less sensitive
+to words that do not carry meaning (or that carry little of it) I used stop
+words. Initially I used Kaggle
+dataset\footnote{\url{https://www.kaggle.com/datasets/heeraldedhia/stop-words-in-28-languages}}
+which resulted in worse scores than without stop words. Then I tried generating
+stop words from the dataset using a threshold of token frequency per document.
+Meaning a token was considered stop word if it occurred more than given times
+per document on average. Stop words generated this way represent more the
+document set than the semantics of the individual words.
+
+The different runs and their corresponding stop word sets are visible in the
+Table~\ref{tbl:run-0-stopwords_sets}.
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{l | c c}
+        run id & \#Czech stop words & \#English stop words \\
+        \hline
+        run-0-stopwords-kaggle & 256 & 1298\\
+        run-0-stopwords-200 & 34 & 71\\
+        run-0-stopwords-600 & 8 & 21\\
+    \end{tabular}
+    \caption{Stop word sets considered for given
+    runs.\label{tbl:run-0-stopwords_sets}}
+\end{table}
+
+\begin{table}[h]
+\centering
+\input{../supplementary/table_run-0-stopwords.tex}
+    \caption{Results of \Run{run-0-stopwords-kaggle}, \Run{run-0-stopwords-200} and
+    \Run{run-0-stopwords-600}.\label{tbl:run-0-stopwords}}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{../supplementary/graph_run-0-stopwords.png}
+    \caption{Precision and 11-point interpolated precision-recall curves for
+    \Run{run-0-stopwords-kaggle}, \Run{run-0-stopwords-200} and
+    \Run{run-0-stopwords-600}.\label{fig:run-0-stopwords}}
+\end{figure}
+
+As can be seen from Figure~\ref{fig:run-0-stopwords} and
+Table~\ref{tbl:run-0-stopwords} the introduction of stop words only worsen the
+systems' scores for Czech. On the other hand the English document set seems to
+benefit from filtering out frequent words. Additionally one can see that the
+Kaggle stop word set I used was probably created with more care for English
+than for Czech, as the performance dip is more pronounced for the Czech document
+set.
+
+Going forward I'll omit stop words for the Czech dataset and apply the
+600-threshold stop word set for the English dataset.
+
+\paragraph{run-0-tagblacklist} Finally I've wanted to omit some SGML tags from
+the documents. Especially for the English dataset there are plenty of tags,
+which do not actually tell us anything about the document. The hypothesis is
+that by filtering out these additional words, the percentage of words bearing
+meaning is increased for each document. The system will therefore have less
+noisy documents to work with, which should increase its performance. The omitted
+tags are the following:
+
+\begin{itemize}
+    \item for Czech documents: \texttt{DOCNO}, \texttt{DOCID},
+    \item for English documents: \texttt{DOCNO}, \texttt{DOCID}, \texttt{SN},
+        \texttt{PD}, \texttt{PN}, \texttt{PG}, \texttt{PP}, \texttt{WD},
+        \texttt{SM}, \texttt{SL}, \texttt{CB}, \texttt{IN}, \texttt{FN}.
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\input{../supplementary/table_run-0-tagblacklist.tex}
+    \caption{Results of \Run{run-0-stopwords-600} on English,
+    \Run{run-0-seps-quot-par} on Czech and \Run{run-0-tagblacklist} on both
+    datasets.\label{tbl:run-0-tagblacklist}}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{../supplementary/graph_run-0-tagblacklist.png}
+    \caption{Precision and 11-point interpolated precision-recall curves for
+    \Run{run-0-seps-quot-par} on Czech and \Run{run-0-tagblacklist} on both
+    datasets.\label{fig:run-0-tagblacklist}}
+\end{figure}
+
+Based on the results in Figure~\ref{fig:run-0-tagblacklist} and
+Table~\ref{tbl:run-0-tagblacklist} we can say that tag-filtering again helped
+with the system's performance on the English dataset while it hindered its
+performance on the Czech dataset. It is so, despite the fact that the filtering
+was much less critical -- only the document identifiers where filtered out.
+Though the system was able to retrieve more relevant documents overall, its
+precision plummeted. This would definitely require more attention as it is now
+unclear why this is the case.
+
+\section{Conclusion}
+
+I've managed to increase my system mean average precision from the initial
+0.1114 and 0.1228 to 0.1202 and 0.1498 for the Czech and English dataset
+respectively. The increase in performance is much smaller for the Czech dataset
+and I'd suspect this is due to the fact there are much more unique word
+forms in the Czech dataset than in the English one. This could be probably
+solved by employing lemmatizer. I've looked into MorphoDiTa, but unfortunately
+I've had difficulties with setting it up.
+
+\section{Glossary}
+
+Throughout the text I used the following terminology:
+\begin{itemize}
+    \item MAP -- \emph{mean average precision}
+    \item \#relevant -- \emph{total number of relevant documents}
+    \item \#rel. \& \#ret. -- \emph{total number of relevant documents returned
+        by the system}
+    \item MRR -- \emph{mean reciprocal rank}
+    \item tf-idf -- \emph{term frequency-inverted document frequency term weights}
+\end{itemize}
+
 
 \end{document}

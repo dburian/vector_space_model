@@ -1,0 +1,140 @@
+\documentclass{beamer}
+
+\usepackage{graphicx}
+\usepackage[font=tiny]{caption}
+
+\title{Vector Space Models}
+\author{David Burian}
+\date{6.12. 2022}
+
+\newcommand{\Run}[1]{\textbf{#1}}
+\let\Oldinput\input
+\renewcommand{\input}[1]{\resizebox{\textwidth}{!}{\Oldinput{#1}}}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\begin{frame}
+\frametitle{Implementation}
+\begin{itemize}
+    \item Python
+    \item use \texttt{multiprocessing.pool.Pool.imap}
+        \begin{itemize}
+            \item ~120s for Czech
+            \item ~320s for English
+        \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{run-0}
+\begin{table}[h]
+\input{../supplementary/table_run-0.tex}
+\caption{Results of \Run{run-0}.\label{tbl:run-0}}
+\end{table}
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{../supplementary/graph_run-0.png}
+\caption{Precision and 11-point interpolated precision-recall curves for
+\Run{run-0}.\label{fig:run-0}}
+\end{figure}
+\end{frame}
+
+\section{run-1}
+\begin{frame}{run-0-tfidf}
+\begin{table}[h]
+\input{../supplementary/table_run-0-tfidf.tex}
+\caption{Results of \Run{run-0-tfidf} and \Run{run-0}.\label{tbl:run-0-tfidf}}
+\end{table}
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{../supplementary/graph_run-0-tfidf.png}
+\caption{Precision and 11-point interpolated precision-recall curves for
+    \Run{run-0-tfidf} and \Run{run-0}.\label{fig:run-0-tfidf}}
+\end{figure}
+\end{frame}
+
+\begin{frame}{run-0-sep}
+\begin{table}[h]
+\input{../supplementary/table_run-0-sep.tex}
+    \caption{Results of
+    \Run{run-0-sep-punc}, \Run{run-0-sep-quot}, \Run{run-0-seps-par},
+    \Run{run-0-seps-quot-par} and \Run{run-0-tfidf}.\label{tbl:run-0-sep}}
+\end{table}
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{../supplementary/graph_run-0-sep.png}
+    \caption{Precision and 11-point interpolated precision-recall curves for
+    \Run{run-0-sep-punc}, \Run{run-0-sep-quot}, \Run{run-0-seps-par},
+    \Run{run-0-seps-quot-par} and \Run{run-0-tfidf}.\label{fig:run-0-sep}}
+\end{figure}
+\end{frame}
+
+\begin{frame}{run-0-stopwords}
+\begin{table}[h]
+    \centering
+    \begin{tabular}{l | c c}
+        run id & \#Czech stop words & \#English stop words \\
+        \hline
+        run-0-stopwords-kaggle & 256 & 1298\\
+        run-0-stopwords-200 & 34 & 71\\
+        run-0-stopwords-600 & 8 & 21\\
+    \end{tabular}
+    \caption{Stop word sets considered for given
+    runs.\label{tbl:run-0-stopwords_sets}}
+\end{table}
+\end{frame}
+
+\begin{frame}{run-0-stopwords}
+\begin{table}[h]
+\centering
+\input{../supplementary/table_run-0-stopwords.tex}
+    \caption{Results of \Run{run-0-stopwords-kaggle}, \Run{run-0-stopwords-200} and
+    \Run{run-0-stopwords-600}.\label{tbl:run-0-stopwords}}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{../supplementary/graph_run-0-stopwords.png}
+    \caption{Precision and 11-point interpolated precision-recall curves for
+    \Run{run-0-stopwords-kaggle}, \Run{run-0-stopwords-200} and
+    \Run{run-0-stopwords-600}.\label{fig:run-0-stopwords}}
+\end{figure}
+\end{frame}
+
+\begin{frame}{run-0-tagblacklist}
+Left out tags:
+\begin{itemize}
+    \item for Czech documents: \texttt{DOCNO}, \texttt{DOCID},
+    \item for English documents: \texttt{DOCNO}, \texttt{DOCID}, \texttt{SN},
+        \texttt{PD}, \texttt{PN}, \texttt{PG}, \texttt{PP}, \texttt{WD},
+        \texttt{SM}, \texttt{SL}, \texttt{CB}, \texttt{IN}, \texttt{FN}.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{run-0-tagblacklist}
+\begin{table}[h]
+\centering
+\input{../supplementary/table_run-0-tagblacklist.tex}
+    \caption{Results of \Run{run-0-stopwords-600} on English,
+    \Run{run-0-seps-quot-par} on Czech and \Run{run-0-tagblacklist} on both
+    datasets.\label{tbl:run-0-tagblacklist}}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{../supplementary/graph_run-0-tagblacklist.png}
+    \caption{Precision and 11-point interpolated precision-recall curves for
+    \Run{run-0-seps-quot-par} on Czech and \Run{run-0-tagblacklist} on both
+    datasets.\label{fig:run-0-tagblacklist}}
+\end{figure}
+\end{frame}
+
+\begin{frame}{The end}
+    \Large
+    \centering
+    Thank you for your attention
+\end{frame}
+
+
+\end{document}

@@ -8,3 +8,8 @@ __pycache__
 # Latex
 *.aux
 *.log
+
+evals/**
+res/**
+stopwords/**
+supplementary/**
