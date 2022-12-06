@@ -3,6 +3,7 @@ from multiprocessing.pool import Pool
 from typing import Callable, Iterator, Optional
 
 import bs4
+
 from src import log, terms, utils
 from src.document import Document, DocumentCS, DocumentEN
 from src.index import InvertedIndex

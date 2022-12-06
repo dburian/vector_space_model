@@ -51,8 +51,8 @@ supplementary: $(all_eval_files)
 	python scripts/graph.py -i ./evals/run-0-tfidf_*.eval ./evals/run-0-sep-*.eval -o $(SUPP_DIR)/graph_run-0-sep.png
 	python scripts/table.py -i ./evals/run-0-sep-quot-par_*.eval ./evals/run-0-stopwords-*.eval -o $(SUPP_DIR)/table_run-0-stopwords.tex
 	python scripts/graph.py -i ./evals/run-0-sep-quot-par_*.eval ./evals/run-0-stopwords-*.eval -o $(SUPP_DIR)/graph_run-0-stopwords.png
-	python scripts/table.py -i ./evals/run-0-sep-quot-par_cs.eval ./evals/run-0-stopwords-600_en.eval ./evals/run-0-tagblacklist_*.eval -o $(SUPP_DIR)/table_run-0-tagblacklist.tex
-	python scripts/graph.py -i ./evals/run-0-sep-quot-par_cs.eval ./evals/run-0-stopwords-600_en.eval ./evals/run-0-tagblacklist_*.eval -o $(SUPP_DIR)/graph_run-0-tagblacklist.png
+	python scripts/table.py -i ./evals/run-0-stopwords-600_cs.eval ./evals/run-0-stopwords-kaggle_en.eval ./evals/run-0-tagblacklist_*.eval -o $(SUPP_DIR)/table_run-0-tagblacklist.tex
+	python scripts/graph.py -i ./evals/run-0-stopwords-600_cs.eval ./evals/run-0-stopwords-kaggle_en.eval ./evals/run-0-tagblacklist_*.eval -o $(SUPP_DIR)/graph_run-0-tagblacklist.png
 
 all_report_files = $(wildcard report/*.tex)
 report: $(all_report_files)

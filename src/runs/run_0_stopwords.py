@@ -3,6 +3,7 @@ from multiprocessing.pool import Pool
 from typing import Callable, Iterator
 
 import bs4
+
 from src import log, terms, utils
 from src.document import Document
 from src.index import InvertedIndex
@@ -28,12 +29,12 @@ def per_document_base(
 
 
 def per_document_cs(path: str) -> tuple[InvertedIndex, int]:
-    stopwords = utils.load_stopwords("stopwords/cs.txt")
+    stopwords = utils.load_stopwords("stopwords/kaggle_cs.txt")
     return per_document_base(path, stopwords, Document)
 
 
 def per_document_en(path: str) -> tuple[InvertedIndex, int]:
-    stopwords = utils.load_stopwords("stopwords/en.txt")
+    stopwords = utils.load_stopwords("stopwords/kaggle_en.txt")
     return per_document_base(path, stopwords, Document)
 
 
@@ -44,7 +45,7 @@ def experiment(
     output_file: str,
     run_id: str,
 ) -> None:
-    stopwords = utils.load_stopwords(f"stopwords/{lan}.txt")
+    stopwords = utils.load_stopwords(f"stopwords/kaggle_{lan}.txt")
     per_doc = per_document_cs if lan == "cs" else per_document_en
     index = InvertedIndex()
 
