@@ -6,6 +6,7 @@ from multiprocessing.pool import Pool
 from typing import Any, Callable, Iterator
 
 import bs4
+
 from src import log, terms
 from src.document import Document
 from src.query import Query
@@ -68,12 +69,14 @@ def load_stopwords(path: str) -> set[str]:
 def gen_stopwords_per_document(args: tuple[str, str]) -> dict[str, int]:
     doc_path, separators = args
     term_counts = {}
+    doc_count = 0
     for doc in get_document_iter(doc_path, Document):
         doc_terms = terms.extract(doc.str_all, separators)
+        doc_count += 1
         for term_str, count in doc_terms.items():
             term_counts[term_str] = term_counts.get(term_str, 0) + count
 
-    return term_counts
+    return term_counts, doc_count
 
 
 def generate_stopwords(
@@ -87,12 +90,12 @@ def generate_stopwords(
     term_counts = {}
     doc_count = 0
     with Pool() as pool:
-        for docs_term_counts in pool.imap(
+        for docs_term_counts, doc_count in pool.imap(
             gen_stopwords_per_document,
             zip_longest(docs_paths_iter, [], fillvalue=separators),
             chunksize=20,
         ):
-            doc_count += 1
+            doc_count += doc_count
             print(f"\rParsed doc {doc_count}", end="")
             for term, count in docs_term_counts.items():
                 term_counts[term] = term_counts.get(term, 0) + count
